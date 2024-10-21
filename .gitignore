@@ -1,5 +1,6 @@
 # Directories
 work/
+data/test_data/
 testing/
 /.nextflow/
 01_*
