@@ -1,0 +1,17 @@
+# Directories
+work/
+testing/
+/.nextflow/
+01_*
+
+# Report
+*.html
+*.log
+.nextflow.log.*
+rb_af2_scoring_full.config
+
+# Output files
+*.csv
+
+# other distributions
+*.tar.gz
