@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 ## Initial solution will ONLY count interactions with NBD, LRR, and between those to handle unannotated WHD domains. 
-def sum_domain_interations(seq, coords, domains, whd_width = 100):
+def sum_domain_interations(seq, model, coords, domains, whd_width = 100):
 	## Iterate through seqnames and summarise the number of interactions per domain 
 	## Getting the unique names from the seqname column 
 	output_table = []
@@ -30,6 +30,7 @@ def sum_domain_interations(seq, coords, domains, whd_width = 100):
 	overlapping_nbd_lrr = "yes" if nbd_end > lrr_start else "no"
 	output_table.append({
 		"seqname": seq,
+		"model": model,
 		"gene_id": temp_coords.gene_id.values[0],
 		"effector": temp_coords.effector.values[0],
 		"complex": temp_coords.complex.values[0],
@@ -58,16 +59,18 @@ parser.add_argument("--regex_string", type=str, default=r'(GLYMA_[0-9]+G[0-9]+)_
 parser.add_argument("--whd_width", type=int, default=100, help="AA width of WHD domains")
 args = parser.parse_args()
 
+## testing
+#ppi_coord_file  = os.path.abspath("/home/dthorbur/Resurrect_Bio/Scripts/af2_processing/testing/raw/ppi_coords_1.csv")
+#ppi_scores_file  = os.path.abspath("/home/dthorbur/Resurrect_Bio/Scripts/af2_processing/testing/raw/ppi_scores_1.csv")
+#nlr_domain_file = os.path.abspath("/home/dthorbur/Resurrect_Bio/Scripts/rb_automation/af2_scoring/test_data/Glycine_max_nlrt_domains.tsv")
+#regex_string = r'(GLYMA_[0-9]+G[0-9]+)_([A-Z0-9]+)_(p[0-9]+)_(OG[0-9]+)_([0-9]+)'
+
 ppi_coord_file  = os.path.abspath(args.ppi_coord_file)
 ppi_scores_file  = os.path.abspath(args.ppi_scores_file)
 nlr_domain_file = os.path.abspath(args.nlr_domain_file)
 output_file = os.path.abspath(args.output_file)
 regex_string = args.regex_string
 
-## testing
-#ppi_coord_file  = os.path.abspath("/home/dthorbur/Resurrect_Bio/Scripts/rb_automation/af2_scoring/mdanalysis_test.csv")
-#nlr_domain_file = os.path.abspath("/home/dthorbur/Resurrect_Bio/Scripts/rb_automation/af2_scoring/test_data/Glycine_max_nlrt_domains.tsv")
-#regex_string = r'(GLYMA_[0-9]+G[0-9]+)_([A-Z0-9]+)_(p[0-9]+)_(OG[0-9]+)_([0-9]+)'
 
 ## Reading in data
 coords  = pd.read_csv(ppi_coord_file)
@@ -75,24 +78,33 @@ scores  = pd.read_csv(ppi_scores_file)
 domains = pd.read_csv(nlr_domain_file, sep='\t', usecols=[0, 2, 3, 4, 5])
 
 ## adding appropraite columns and subsetting
-coords['gene_id'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(1))
-coords['seqname'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(2))
-coords['effector'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(3))
-coords['complex_len'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(5))
+#coords['gene_id'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(1))
+#coords['seqname'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(2))
+#coords['effector'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(3))
+#coords['complex_len'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(5))
+
+coords['gene_id'] = coords['complex'].str.extract(regex_string, expand=False)[0]
+coords['seqname'] = coords['complex'].str.extract(regex_string, expand=False)[1]
+coords['effector'] = coords['complex'].str.extract(regex_string, expand=False)[2]
+coords['complex_len'] = coords['complex'].str.extract(regex_string, expand=False)[4]
 
 domains = domains.loc[domains['description'] != 'chain']
 
 all_output = []
-uniq_seqs = set(coords.seqname)
-total_samples = len(uniq_seqs) 
-for idx, seq in enumerate(uniq_seqs, start = 1):
-	print(f"Processing file {idx}/{total_samples}: {seq}")
-	output_df = sum_domain_interations(seq, coords, domains)
-	all_output.append(output_df)
+uniq_complexes = set(coords.complex)
+total_samples = len(uniq_complexes) 
+for idx, temp_complex in enumerate(uniq_complexes, start = 1):
+	print(f"Processing file {idx}/{total_samples}: {temp_complex}")
+	temp_coords = coords[coords['complex'] == temp_complex]
+	uniq_models = set(coords.model)
+	for temp_model in uniq_models:
+		temp_model_df = temp_coords[temp_coords['model'] == temp_model]
+		output_df = sum_domain_interations(temp_model_df.seqname.unique()[0], temp_model, temp_model_df, domains)
+		all_output.append(output_df)
 
 if all_output:
 	combined_df = pd.concat(all_output, ignore_index=True)
-	merged_df = combined_df.merge(scores, on='complex')
+	merged_df = combined_df.merge(scores, on=['complex', 'model'])
 	print(merged_df)
 	merged_df.to_csv(output_file, index=False)
 else:

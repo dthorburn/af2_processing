@@ -20,12 +20,13 @@ Author: Doko-Miles Thorburn <miles@resurrect.bio>
 
 include { PDB_INTERACTIONS } from '../modules/pdb_interactions.nf'
 include { JSON_SCORES } from '../modules/json_scores.nf'
-//include { MERGE_PS } form '../modules/pdb_output_merging.nf'
+include { MERGE_PDB_SCORES } from '../modules/merge_pdb_scores.nf'
 
 workflow PDB_STATS {
   take:
     extract_coords_script
     overlay_coords_script
+    merge_scoring_script
     nlrdomains
     pdb_dir
 
@@ -36,4 +37,8 @@ workflow PDB_STATS {
       overlay_coords_script.first())
 
     JSON_SCORES( pdb_dir )
+
+    MERGE_PDB_SCORES( merge_scoring_script,
+      PDB_INTERACTIONS.out.ppi_scores.collect(),
+      JSON_SCORES.out.pdb_dir_ptms.collect())
 }
