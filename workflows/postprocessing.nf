@@ -13,6 +13,7 @@ Output Dir     : ${params.PS_output}
 NLR Domain TSV : ${params.PS_nlrt_domains}
 Extract Script : ${params.extract_coords_script}
 Overlay Script : ${params.overlay_coords_script}
+Merge Script   : ${params.merge_scoring_script}
 
 Author: Doko-Miles Thorburn <miles@resurrect.bio>
 ===============================================================================================
