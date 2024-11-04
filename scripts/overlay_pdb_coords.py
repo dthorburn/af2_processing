@@ -5,11 +5,13 @@ import numpy as np
 import pandas as pd
 
 ## Initial solution will ONLY count interactions with NBD, LRR, and between those to handle unannotated WHD domains. 
-def sum_domain_interations(seq, model, coords, domains, whd_width = 100):
+#def sum_domain_interations(seq, model, coords, domains, whd_width = 100):
+def sum_domain_interations(file, coords, domains, whd_width = 100):
 	## Iterate through seqnames and summarise the number of interactions per domain 
 	## Getting the unique names from the seqname column 
 	output_table = []
-	temp_coords  = coords.loc[coords['seqname'] == seq]
+	temp_coords  = coords.loc[coords['file'] == file]
+	seq = temp_coords.seqname.unique()[0]
 	temp_domains = domains.loc[domains['seqname'] == seq]
 	nbd_coords = temp_domains.loc[temp_domains['description'] == "NBARC"]
 	lrr_coords = temp_domains.loc[temp_domains['description'] == "LRR"]
@@ -30,8 +32,8 @@ def sum_domain_interations(seq, model, coords, domains, whd_width = 100):
 	overlapping_nbd_lrr = "yes" if nbd_end > lrr_start else "no"
 	output_table.append({
 		"seqname": seq,
-		"model": model,
-		"gene_id": temp_coords.gene_id.values[0],
+		"model": temp_coords.model.unique()[0],
+		#"gene_id": temp_coords.gene_id.values[0],
 		"effector": temp_coords.effector.values[0],
 		"complex": temp_coords.complex.values[0],
 		"domains": temp_domains.Domain.values[0],
@@ -54,16 +56,16 @@ parser.add_argument("ppi_scores_file", type=str, help="Path to extract_pdb_coord
 parser.add_argument("nlr_domain_file", type=str, help="Path to PLANT x_nlrt_domains.tsv file")
 parser.add_argument("output_file", type=str, help="Path for output CSV")
 # Optional arguments for minimum and maximum distance thresholds
-parser.add_argument("--regex_string", type=str, default=r'(GLYMA_[0-9]+G[0-9]+)_([A-Z0-9]+)_(p[0-9]+)_(OG[0-9]+)_([0-9]+)', 
+parser.add_argument("--regex_string", type=str, default=r'([A-Z0-9]+)_(EGZ[0-9]+)_(OG[0-9]+)_([0-9]+)', 
 	help="Regex string to parse complex name column")
 parser.add_argument("--whd_width", type=int, default=100, help="AA width of WHD domains")
 args = parser.parse_args()
 
 ## testing
-#ppi_coord_file  = os.path.abspath("/home/dthorbur/Resurrect_Bio/Scripts/af2_processing/testing/raw/ppi_coords_1.csv")
-#ppi_scores_file  = os.path.abspath("/home/dthorbur/Resurrect_Bio/Scripts/af2_processing/testing/raw/ppi_scores_1.csv")
+#ppi_coord_file  = os.path.abspath("/home/dthorbur/Resurrect_Bio/Projects/04_FloraFold/05_screen/af2_processing/data/test_data/interactions.csv")
+#ppi_scores_file  = os.path.abspath("/home/dthorbur/Resurrect_Bio/Projects/04_FloraFold/05_screen/af2_processing/data/test_data/scoring.csv")
 #nlr_domain_file = os.path.abspath("/home/dthorbur/Resurrect_Bio/Scripts/rb_automation/af2_scoring/test_data/Glycine_max_nlrt_domains.tsv")
-#regex_string = r'(GLYMA_[0-9]+G[0-9]+)_([A-Z0-9]+)_(p[0-9]+)_(OG[0-9]+)_([0-9]+)'
+#regex_string = '([A-Z0-9]+)_(EGZ[0-9]+)_(OG[0-9]+)_([0-9]+)'
 
 ppi_coord_file  = os.path.abspath(args.ppi_coord_file)
 ppi_scores_file  = os.path.abspath(args.ppi_scores_file)
@@ -83,24 +85,26 @@ domains = pd.read_csv(nlr_domain_file, sep='\t', usecols=[0, 2, 3, 4, 5])
 #coords['effector'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(3))
 #coords['complex_len'] = coords['complex'].apply(lambda seqname: re.match(regex_string, seqname).group(5))
 
-coords['gene_id'] = coords['complex'].str.extract(regex_string, expand=False)[0]
-coords['seqname'] = coords['complex'].str.extract(regex_string, expand=False)[1]
-coords['effector'] = coords['complex'].str.extract(regex_string, expand=False)[2]
-coords['complex_len'] = coords['complex'].str.extract(regex_string, expand=False)[4]
-
+#coords['gene_id'] = coords['complex'].str.extract(regex_string, expand=False)[0]
+coords['seqname'] = coords['complex'].str.extract(regex_string, expand=False)[0]
+coords['effector'] = coords['complex'].str.extract(regex_string, expand=False)[1]
+coords['complex_len'] = coords['complex'].str.extract(regex_string, expand=False)[3]
+print(coords)
 domains = domains.loc[domains['description'] != 'chain']
 
 all_output = []
-uniq_complexes = set(coords.complex)
+uniq_complexes = set(coords.file)
 total_samples = len(uniq_complexes) 
 for idx, temp_complex in enumerate(uniq_complexes, start = 1):
 	print(f"Processing file {idx}/{total_samples}: {temp_complex}")
-	temp_coords = coords[coords['complex'] == temp_complex]
-	uniq_models = set(coords.model)
-	for temp_model in uniq_models:
-		temp_model_df = temp_coords[temp_coords['model'] == temp_model]
-		output_df = sum_domain_interations(temp_model_df.seqname.unique()[0], temp_model, temp_model_df, domains)
-		all_output.append(output_df)
+	temp_coords = coords[coords['file'] == temp_complex]
+	#uniq_models = set(coords.model)
+	#for temp_model in uniq_models:
+	#	temp_model_df = temp_coords[temp_coords['model'] == temp_model]
+	#	output_df = sum_domain_interations(temp_model_df.seqname.unique()[0], temp_model, temp_model_df, domains)
+	#	all_output.append(output_df)
+	output_df = sum_domain_interations(temp_coords.file.unique()[0], temp_coords, domains)
+	all_output.append(output_df)
 
 if all_output:
 	combined_df = pd.concat(all_output, ignore_index=True)

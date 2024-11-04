@@ -12,8 +12,8 @@ from collections import defaultdict
 
 def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, complex_name=None):
     ## Generate complex name from file name if not provided
+    fname = os.path.basename(pdb_file)
     if complex_name is None:
-        fname = os.path.basename(pdb_file)
         complex_name = re.sub("_unrelaxed.*$", "", fname)
     ## Load the structure using MDAnalysis
     u = mda.Universe(pdb_file)
@@ -28,9 +28,6 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
     ## Find atom pairs where the distance is within the specified range
     close_contacts = np.where((distances >= min_distance) & (distances <= max_distance))
     too_close = np.where(distances < min_distance)
-    ## For pDockQ calculation
-    contact_mask = (distances >= min_distance) & (distances <= max_distance)
-    num_contacts = np.sum(contact_mask)
     ## Store interactions, but only one per residue pair
     interactions = []
     processed_pairs = set()  
@@ -44,6 +41,7 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
         ## Check if this residue pair has been processed already
         if (residue_A.resid, residue_B.resid) not in processed_pairs:
             interactions.append({
+                "file": fname,
                 "complex": complex_name,
                 "model": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
                 "residue1": f"{residue_A.resname}{residue_A.resid}",
@@ -61,6 +59,7 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
     else:
         ## If no interactions, return an empty DataFrame with expected columns
         df = pd.DataFrame([{
+            "file": fname,
             "complex": complex_name,
             "model": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
             "residue1": None,
@@ -82,6 +81,7 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
             processed_too_close.add((residue_A.resid, residue_B.resid))
     if processed_too_close:
         int_close = {
+            "file": fname,
             "complex": complex_name,
             "model": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
             "close_atoms" : len(too_close[0]),
@@ -91,6 +91,7 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
         df2 = pd.DataFrame([int_close])
     else:
         df2 = pd.DataFrame([{
+            "file": fname,
             "complex": complex_name,
             "model": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
             "close_atoms" : None,
@@ -190,6 +191,11 @@ def calc_pdockq(chain_coords, chain_plddt, min_distance, max_distance):
             ppv = PPV[0]
     return pdockq, ppv
 
+## Testing
+pdb_dir = os.path.abspath("/home/dthorbur/Resurrect_Bio/Projects/04_FloraFold/05_screen/af2_processing/data/test_data")
+min_distance = 1.5
+max_distance = 5.0
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find interactions between amino acids in different chains in all PDB files in a directory.")
     # Positional arguments for the PDB directory and output files
@@ -209,26 +215,39 @@ if __name__ == "__main__":
     min_distance = args.min_distance
     max_distance = args.max_distance
 
-    all_interactions = []
-    too_close_output = []
-    pdockq_output = []
+all_interactions = []
+too_close_output = []
+pdockq_output = []
 
-    pdb_files = glob.glob(os.path.join(pdb_dir, "*.pdb"))
-    total_files = len(pdb_files) 
+pdb_files = glob.glob(os.path.join(pdb_dir, "*.pdb"))
+total_files = len(pdb_files) 
 
-    for idx, pdb_file in enumerate(pdb_files,start=1):
-        ## Generate the complex name based on the PDB file name
-        fname = os.path.basename(pdb_file)
-        sname = re.sub("_unrelaxed.*$", "", fname)
-        print(f"Processing file {idx}/{total_files}: {sname}")
-        interaction_df, too_close_df = find_residue_interactions_np(pdb_file, min_distance=min_distance, max_distance=max_distance, complex_name=sname)
-        all_interactions.append(interaction_df)
-        too_close_output.append(too_close_df)
-
-        ## pDockQ calculations
-        chain_coords, chain_plddt = read_pdb(pdb_file)
-        pdockq, ppv = calc_pdockq(chain_coords, chain_plddt, min_distance, max_distance)
+for idx, pdb_file in enumerate(pdb_files,start=1):
+    ## Generate the complex name based on the PDB file name
+    fname = os.path.basename(pdb_file)
+    sname = re.sub("_unrelaxed.*$", "", fname)
+    print(f"Processing file {idx}/{total_files}: {sname}")
+    interaction_df, too_close_df = find_residue_interactions_np(pdb_file, min_distance=min_distance, max_distance=max_distance, complex_name=sname)
+    all_interactions.append(interaction_df)
+    too_close_output.append(too_close_df)
+    ## pDockQ calculations
+    chain_coords, chain_plddt = read_pdb(pdb_file)
+    pdockq, ppv = calc_pdockq(chain_coords, chain_plddt, min_distance, max_distance)
+    if pdockq == 0 and ppv == 0:
         pdockq_output.append({
+                "file": fname,
+                "complex": sname,
+                "model": re.match(r'.*_(rank_[0-9]+)', fname).group(1),
+                "pdockq" : pd.NA,
+                "pdockq_confidence" : pd.NA,
+                "chain_A_plddt_mean": pd.NA,
+                "chain_A_plddt_sd": pd.NA,
+                "chain_B_plddt_mean": pd.NA,
+                "chain_B_plddt_sd": pd.NA
+            })
+    else:
+        pdockq_output.append({
+                "file": fname,
                 "complex": sname,
                 "model": re.match(r'.*_(rank_[0-9]+)', fname).group(1),
                 "pdockq" : round(pdockq, 3),
@@ -239,16 +258,16 @@ if __name__ == "__main__":
                 "chain_B_plddt_sd": round(statistics.stdev(chain_plddt['B']), 3)
             })
 
-    if all_interactions:
-        combined_df = pd.concat(all_interactions, ignore_index=True)
-        print(combined_df)
-        combined_df.to_csv(interactions_output, index=False)
-    else:
-        print("No PDB files found or no interactions detected.")
-    if too_close_output and pdockq_output:
-        pdockq_df = pd.DataFrame(pdockq_output)
-        proximity_df = pd.concat(too_close_output, ignore_index=True)
+if all_interactions:
+    combined_df = pd.concat(all_interactions, ignore_index=True)
+    print(combined_df)
+    combined_df.to_csv(interactions_output, index=False)
+else:
+    print("No PDB files found or no interactions detected.")
+if too_close_output and pdockq_output:
+    pdockq_df = pd.DataFrame(pdockq_output)
+    proximity_df = pd.concat(too_close_output, ignore_index=True)
 
-        merged_df = proximity_df.merge(pdockq_df, on=['complex', 'model'])
-        print(merged_df)
-        merged_df.to_csv(scoring_output, index=False)
+    merged_df = proximity_df.merge(pdockq_df, on=['complex', 'model', 'file'])
+    print(merged_df)
+    merged_df.to_csv(scoring_output, index=False)
