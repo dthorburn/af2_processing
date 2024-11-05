@@ -1,6 +1,7 @@
 # Directories
+.vscode/
 work/
-data/test_data/
+data/test_*
 testing/
 /.nextflow/
 01_*

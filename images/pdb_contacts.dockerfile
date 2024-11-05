@@ -24,6 +24,8 @@ RUN conda config --add channels bioconda \
 WORKDIR /usr/local/src
 ## Installing necessary Python libraries
 RUN conda install -y mdanalysis pandas numpy \
+    conda install -c salilab dssp \
+    conda install libboost=1.73.0 \
     && conda clean -afy
 
 ENV PATH "/opt/conda/envs/pdb_contacts/bin:$PATH"

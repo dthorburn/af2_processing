@@ -8,8 +8,8 @@ cd $ProjectDir
 nextflow run rb_af2_scoring.nf \
     -c rb_af2_scoring.config \
     --Mode "pdbstats" \
-    --runname "psojae_rxlrs" \
-    --PS_input "gs://florafold/03-screens/psojae-rxlr-all-ccnlrs/predictions" \
-    --PS_output "/home/dthorbur/Resurrect_Bio/Projects/04_FloraFold/05_screen/03_gmax_psojae/scoring/rxlrs" \
+    --runname "hvulgare_rerun" \
+    --PS_input "gs://rb-interactions/hvulgare-bgraminis/florafold_rerun/predictions" \
+    --PS_output "/home/dthorbur/Resurrect_Bio/Projects/01_Candidate_Search/03_Interactions/07_hvulgare_bgraminis/florafold_rerun" \
     --PS_nlrt_domains "/home/dthorbur/Resurrect_Bio/Scripts/rb_automation/af2_scoring/test_data/Glycine_max_nlrt_domains.tsv" \
     --PI_regex_string '([A-Z0-9]+)_(EGZ[0-9]+)_(OG[0-9]+)_([0-9]+)'
