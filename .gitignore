@@ -6,14 +6,13 @@ testing/
 /.nextflow/
 01_*
 
-# Report
+# Files
 *.html
 *.log
 .nextflow.log.*
 rb_af2_scoring_full.config
-
-# Output files
 *.csv
+Dockerfile
 
 # other distributions
 *.tar.gz

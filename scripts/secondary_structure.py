@@ -32,7 +32,7 @@ def find_disulphide(input_pdb, min_distance=1.8, max_distance=2.2):
                 disulphides = disulphides + 1
     return(disulphides)
 
-def calculate_2d_structure(sname, input_pdb, is_eff):
+def calculate_2d_structure(sname, input_pdb, is_eff, min_distance, max_distance):
     """
     Calculate the secondary structure of PDB files.
     Args:
@@ -55,7 +55,7 @@ def calculate_2d_structure(sname, input_pdb, is_eff):
     
     ## Boolean handling of effector disulphide estimation
     if is_eff:
-        ss_out["ds_bonds"] = find_disulphide(input_pdb)
+        ss_out["ds_bonds"] = find_disulphide(input_pdb, min_distance, max_distance)
         ss_out["prop_unstruc"] = round(ss_out["ss3"].count('-') / len(ss_out["ss3"]), 4)
     if ss_out:
         res = pd.DataFrame([ss_out])
@@ -91,7 +91,7 @@ with tqdm(total=total_files, desc="Processing PDBs") as pbar:
     for temp_pdb in pdb_files:
         sname = os.path.basename(temp_pdb)
         pbar.set_description(f"Processing PDB: {sname}")
-        temp_ss = calculate_2d_structure(sname, temp_pdb, is_eff)
+        temp_ss = calculate_2d_structure(sname, temp_pdb, is_eff, min_distance, max_distance)
         all_ss.append(temp_ss)
         pbar.update(1)
 
