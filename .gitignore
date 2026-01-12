@@ -13,6 +13,7 @@ testing/
 rb_af2_scoring_full.config
 *.csv
 Dockerfile
+rb_af2_scoring_nontemplate.sh
 
 # other distributions
 *.tar.gz
