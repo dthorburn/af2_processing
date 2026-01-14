@@ -25,14 +25,14 @@ process PDB_INTERACTIONS {
 
   output:
     path("ppi_coords_${task.index}.csv")
-    path("ppi_scores_${task.index}.csv")
-    path("nlr_domain_interactions_${task.index}.csv"), emit: ppi_scores
+    path("ppi_scores_${task.index}.csv"), emit: ppi_scores
+    //path("nlr_domain_interactions_${task.index}.csv"), emit: ppi_scores // Deprecated due to regex scoring being too restrictive and not uniform enough across species.
 
   script:
   """
   #ls ./${pdb_dir}/
   python ${extract_coords_script} ./${pdb_dir}/ ppi_coords_${task.index}.csv ppi_scores_${task.index}.csv ${params.PI_ext_args} 
 
-  python ${overlay_coords_script} ppi_coords_${task.index}.csv ppi_scores_${task.index}.csv ${nlrdomains} nlr_domain_interactions_${task.index}.csv --regex_string '${params.PI_regex_string}' ${params.PI_ol_args} 
+  #python ${overlay_coords_script} ppi_coords_${task.index}.csv ppi_scores_${task.index}.csv ${nlrdomains} nlr_domain_interactions_${task.index}.csv --regex_string '${params.PI_regex_string}' ${params.PI_ol_args} 
   """
 }

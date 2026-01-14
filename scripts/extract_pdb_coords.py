@@ -192,9 +192,9 @@ def calc_pdockq(chain_coords, chain_plddt, min_distance, max_distance):
     return pdockq, ppv
 
 ## Testing
-pdb_dir = os.path.abspath("/home/dthorbur/Resurrect_Bio/Projects/04_FloraFold/05_screen/af2_processing/data/test_data")
-min_distance = 1.5
-max_distance = 5.0
+#pdb_dir = os.path.abspath("/home/dthorbur/Resurrect_Bio/Projects/04_FloraFold/05_screen/af2_processing/data/test_data")
+#min_distance = 1.5
+#max_distance = 5.0
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find interactions between amino acids in different chains in all PDB files in a directory.")
