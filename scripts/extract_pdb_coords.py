@@ -43,7 +43,7 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
             interactions.append({
                 "file": fname,
                 "complex": complex_name,
-                "model": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
+                "rank": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
                 "residue1": f"{residue_A.resname}{residue_A.resid}",
                 "chain1": residue_A.segid,
                 "residue1_num": residue_A.resid,
@@ -61,7 +61,7 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
         df = pd.DataFrame([{
             "file": fname,
             "complex": complex_name,
-            "model": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
+            "rank": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
             "residue1": None,
             "chain1": None,
             "residue1_num": None,
@@ -83,7 +83,7 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
         int_close = {
             "file": fname,
             "complex": complex_name,
-            "model": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
+            "rank": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
             "close_atoms" : len(too_close[0]),
             "close_residues" : len(processed_too_close),
             "min_distance_threshold": min_distance
@@ -93,7 +93,7 @@ def find_residue_interactions_np(pdb_file, min_distance=1.5, max_distance=5.0, c
         df2 = pd.DataFrame([{
             "file": fname,
             "complex": complex_name,
-            "model": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
+            "rank": re.match(r'.*_(rank_[0-9]+)', pdb_file).group(1) if re.match(r'.*_(rank_[0-9]+)', pdb_file) else "unknown",
             "close_atoms" : None,
             "close_residues" : None,
             "min_distance_threshold": min_distance
@@ -237,7 +237,7 @@ for idx, pdb_file in enumerate(pdb_files,start=1):
         pdockq_output.append({
                 "file": fname,
                 "complex": sname,
-                "model": re.match(r'.*_(rank_[0-9]+)', fname).group(1),
+                "rank": re.match(r'.*_(rank_[0-9]+)', fname).group(1),
                 "pdockq" : pd.NA,
                 "pdockq_confidence" : pd.NA,
                 "chain_A_plddt_mean": pd.NA,
@@ -249,7 +249,7 @@ for idx, pdb_file in enumerate(pdb_files,start=1):
         pdockq_output.append({
                 "file": fname,
                 "complex": sname,
-                "model": re.match(r'.*_(rank_[0-9]+)', fname).group(1),
+                "rank": re.match(r'.*_(rank_[0-9]+)', fname).group(1),
                 "pdockq" : round(pdockq, 3),
                 "pdockq_confidence" : round(ppv, 3),
                 "chain_A_plddt_mean": round(statistics.mean(chain_plddt['A']), 3),
@@ -268,6 +268,6 @@ if too_close_output and pdockq_output:
     pdockq_df = pd.DataFrame(pdockq_output)
     proximity_df = pd.concat(too_close_output, ignore_index=True)
 
-    merged_df = proximity_df.merge(pdockq_df, on=['complex', 'model', 'file'])
+    merged_df = proximity_df.merge(pdockq_df, on=['complex', 'rank', 'file'])
     print(merged_df)
     merged_df.to_csv(scoring_output, index=False)

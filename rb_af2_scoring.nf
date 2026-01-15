@@ -70,10 +70,10 @@ workflow {
       .fromPath("${params.PS_input}/${params.PS_batch_name}*", type: 'dir')
       .ifEmpty { error "No PDBs in input directory: ${params.PS_input}/${params.PS_batch_name}*" }
       .set { pdb_dir }
-    Channel
-      .fromPath(params.PS_nlrt_domains)
-      .ifEmpty { error "No NLR domains tsv supplied: ${params.PS_nlrt_domains}" }
-      .set { nlrdomains }
+//    Channel
+//      .fromPath(params.PS_nlrt_domains)
+//      .ifEmpty { error "No NLR domains tsv supplied: ${params.PS_nlrt_domains}" }
+//      .set { nlrdomains }
     Channel
       .fromPath(params.extract_coords_script)
       .ifEmpty { error "No merging Rscript supplied: ${params.extract_coords_script}" }
@@ -89,6 +89,6 @@ workflow {
 
     //pdb_dir.view()
 
-    PDB_STATS(extract_coords_script, overlay_coords_script, merge_scoring_script, nlrdomains, pdb_dir)
+    PDB_STATS(extract_coords_script, overlay_coords_script, merge_scoring_script, pdb_dir)
   }
 }

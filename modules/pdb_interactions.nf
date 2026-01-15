@@ -19,9 +19,9 @@ process PDB_INTERACTIONS {
 
   input:
     path(pdb_dir)
-    path(nlrdomains)
     path(extract_coords_script)
-    path(overlay_coords_script)
+//    path(nlrdomains)
+//    path(overlay_coords_script)
 
   output:
     path("ppi_coords_${task.index}.csv")
@@ -32,7 +32,6 @@ process PDB_INTERACTIONS {
   """
   #ls ./${pdb_dir}/
   python ${extract_coords_script} ./${pdb_dir}/ ppi_coords_${task.index}.csv ppi_scores_${task.index}.csv ${params.PI_ext_args} 
-
-  #python ${overlay_coords_script} ppi_coords_${task.index}.csv ppi_scores_${task.index}.csv ${nlrdomains} nlr_domain_interactions_${task.index}.csv --regex_string '${params.PI_regex_string}' ${params.PI_ol_args} 
   """
+  //  #python ${overlay_coords_script} ppi_coords_${task.index}.csv ppi_scores_${task.index}.csv ${nlrdomains} nlr_domain_interactions_${task.index}.csv --regex_string '${params.PI_regex_string}' ${params.PI_ol_args} 
 }

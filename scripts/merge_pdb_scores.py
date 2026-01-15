@@ -22,9 +22,12 @@ scoring_output = os.path.abspath(args.scoring_output)
 
 ## Reading in all the data and concatanating into a single file
 all_pdb_csv = []
-for idx, pdb_csv in enumerate(glob.glob(f"{pdb_csv_dir}/nlr_domain_interactions*.csv"), start = 1):
+#for idx, pdb_csv in enumerate(glob.glob(f"{pdb_csv_dir}/nlr_domain_interactions*.csv"), start = 1):		## Old too restrictive analysis 
+#complex,model,close_atoms,close_residues,min_distance_threshold,pdockq,pdockq_confidence,chain_A_plddt_mean,chain_A_plddt_sd,chain_B_plddt_mean,chain_B_plddt_sd
+for idx, pdb_csv in enumerate(glob.glob(f"{pdb_csv_dir}/ppi_scores_*.csv"), start = 1):
 	print(f"Processing file {idx}: {pdb_csv}")
 	temp_csv = pd.read_csv(pdb_csv)
+	temp_csv = temp_csv.drop('file', axis = 1)
 	all_pdb_csv.append(temp_csv)
 	#del temp_csv
 
@@ -32,6 +35,7 @@ if all_pdb_csv:
 	all_pdb_csv = pd.concat(all_pdb_csv, ignore_index = True)
 
 all_json_csv = []
+#unnamed columns, but 'complex with rank',ptm, iptm
 for idx, json_csv in enumerate(glob.glob(f"{json_csv_dir}/output_ptms*.csv"), start = 1):
 	print(f"Processing file {idx}: {json_csv}")
 	temp_csv = pd.read_csv(json_csv, header=None, names=['complex_wrank', 'pTM', 'ipTM'])
@@ -43,11 +47,16 @@ for idx, json_csv in enumerate(glob.glob(f"{json_csv_dir}/output_ptms*.csv"), st
 if all_json_csv:
 	all_json_csv = pd.concat(all_json_csv, ignore_index = True)
 
-
-merged_df = all_json_csv.merge(all_pdb_csv.rename(columns={"model": "rank"}), on=['complex' , 'rank'])
-merged_df = merged_df.reindex(columns=['complex', 'rank', 'seqname', 'gene_id', 'effector', 'domains', 'overlapping_nbd_lrr', 'pre_nbd_contacts', 'nbd_contacts', 'nbd_end_contacts', 
-			'between_ndb_lrr_contacts', 'lrr_contacts', 'post_lrr_contacts', 'close_atoms', 'close_residues', 'min_distance_threshold', 'pTM', 'ipTM', 'pdockq', 
-			'pdockq_confidence', 'chain_A_plddt_mean', 'chain_A_plddt_sd', 'chain_B_plddt_mean', 'chain_B_plddt_sd'])
+#### NEED TO FIX THIS PART!
+#merged_df = all_json_csv.merge(all_pdb_csv.rename(columns={"model": "rank"}), on=['complex' , 'rank'])
+merged_df = all_json_csv.merge(all_pdb_csv, on=['complex' , 'rank'])
+## Deprecated column names. Keeping in case we reimplement at some point.
+#merged_df = merged_df.reindex(columns=['complex', 'rank', 'seqname', 'gene_id', 'effector', 'domains', 'overlapping_nbd_lrr', 'pre_nbd_contacts', 'nbd_contacts', 'nbd_end_contacts', 
+#			'between_ndb_lrr_contacts', 'lrr_contacts', 'post_lrr_contacts', 'close_atoms', 'close_residues', 'min_distance_threshold', 'pTM', 'ipTM', 'pdockq', 
+#			'pdockq_confidence', 'chain_A_plddt_mean', 'chain_A_plddt_sd', 'chain_B_plddt_mean', 'chain_B_plddt_sd'])
+merged_df = merged_df.reindex(columns=['complex', 'rank', 'close_atoms', 'close_residues', 'min_distance_threshold', 'pdockq', 
+									   'pdockq_confidence', 'chain_A_plddt_mean', 'chain_A_plddt_sd', 'chain_B_plddt_mean', 
+									   'chain_B_plddt_sd', 'pTM', 'ipTM'])
 print(merged_df)
 merged_df.to_csv(scoring_output, index=False)
 
